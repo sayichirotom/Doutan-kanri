@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>動態管理 管理者画面</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: 20px;
+    }
+
+    .admin-box {
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .update-time {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 18px;
+    }
+
+    th, td {
+      padding: 14px 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f3f5;
+    }
+
+    .state {
+      font-weight: bold;
+    }
+
+    .refresh {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      border: 0;
+      border-radius: 12px;
+      background: #2583e9;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="admin-box">
+
+  <h1>募集課勤務者 動態一覧</h1>
+
+  <div class="update-time" id="updateTime">
+    読み込み中...
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>氏名</th>
+        <th>現在</th>
+        <th>更新時刻</th>
+      </tr>
+    </thead>
+
+    <tbody id="memberList">
+    </tbody>
+  </table>
+
+  <button class="refresh" onclick="loadMembers()">
+    最新情報に更新
+  </button>
+
+</div>
+
+<script src="config.js"></script>
+
+<script>
+async function loadMembers() {
+
+  const list = document.getElementById("memberList");
+
+  list.innerHTML =
+    '<tr><td colspan="3">読み込み中...</td></tr>';
+
+  try {
+
+    const response = await fetch(
+      SUPABASE_URL +
+      "/rest/v1/members?select=display_name,current_state,updated_at&order=display_name",
+      {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("データ取得に失敗しました");
+    }
+
+    const members = await response.json();
+
+    list.innerHTML = "";
+
+    members.forEach(member => {
+
+      const tr = document.createElement("tr");
+
+      const time = member.updated_at
+        ? new Date(member.updated_at).toLocaleTimeString(
+            "ja-JP",
+            {hour:"2-digit", minute:"2-digit"}
+          )
+        : "-";
+
+      tr.innerHTML = `
+        <td>${member.display_name}</td>
+        <td class="state">${member.current_state || "未登録"}</td>
+        <td>${time}</td>
+      `;
+
+      list.appendChild(tr);
+
+    });
+
+    document.getElementById("updateTime").textContent =
+      "最終確認：" +
+      new Date().toLocaleTimeString(
+        "ja-JP",
+        {hour:"2-digit", minute:"2-digit"}
+      );
+
+  } catch(error) {
+
+    list.innerHTML =
+      '<tr><td colspan="3">読み込みに失敗しました</td></tr>';
+
+    console.error(error);
+  }
+}
+
+loadMembers();
+
+/* 30秒ごとに自動更新 */
+setInterval(loadMembers, 30000);
+
+</script>
+
+</body>
+</html>
