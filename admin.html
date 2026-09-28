@@ -107,8 +107,8 @@ async function loadMembers() {
       "/rest/v1/members?select=display_name,current_state,updated_at&order=display_name",
       {
         headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": "Bearer " + SUPABASE_ANON_KEY
+          "apikey": SUPABASE_PUBLISHABLE_KEY ,
+          "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
         }
       }
     );
