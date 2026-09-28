@@ -1,103 +1,101 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>募集課勤務者 動態一覧</title>
 
-<title>募集課勤務者 動態一覧</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px 16px;
+      background: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      color: #17202a;
+    }
 
-<style>
-body {
-  margin: 0;
-  padding: 30px 16px;
-  background: #f4f6f8;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #17202a;
-}
+    .card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      padding: 28px 22px;
+    }
 
-.card {
-  max-width: 760px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 24px;
-  padding: 28px 22px;
-}
+    h1 {
+      font-size: 28px;
+      margin: 0 0 15px;
+    }
 
-h1 {
-  font-size: 28px;
-}
+    #status {
+      margin-bottom: 20px;
+      color: #666;
+      font-size: 18px;
+    }
 
-#status {
-  margin-bottom: 20px;
-  color: #666;
-}
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 18px;
+    }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 18px;
-}
+    th {
+      background: #eef1f4;
+      text-align: left;
+      padding: 14px 10px;
+    }
 
-th {
-  background: #eef1f4;
-  text-align: left;
-  padding: 14px 10px;
-}
+    td {
+      padding: 16px 10px;
+      border-bottom: 1px solid #ddd;
+    }
 
-td {
-  padding: 16px 10px;
-  border-bottom: 1px solid #ddd;
-}
+    button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      border: 0;
+      border-radius: 14px;
+      background: #4285e5;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+    }
 
-button {
-  width: 100%;
-  margin-top: 24px;
-  padding: 16px;
-  border: 0;
-  border-radius: 14px;
-  background: #4285e5;
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.error {
-  color: red !important;
-}
-</style>
+    .error {
+      color: #c62828;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
 
 <div class="card">
 
-<h1>募集課勤務者 動態一覧</h1>
+  <h1>募集課勤務者 動態一覧</h1>
 
-<div id="status">読み込み中...</div>
+  <div id="status">読み込み中...</div>
 
-<table>
-<thead>
-<tr>
-<th>氏名</th>
-<th>現在</th>
-<th>更新時刻</th>
-</tr>
-</thead>
+  <table>
+    <thead>
+      <tr>
+        <th>氏名</th>
+        <th>現在</th>
+        <th>更新時刻</th>
+      </tr>
+    </thead>
 
-<tbody id="memberList"></tbody>
+    <tbody id="memberList"></tbody>
+  </table>
 
-</table>
-
-<button onclick="loadMembers()">
-最新情報に更新
-</button>
+  <button id="reloadButton">最新情報に更新</button>
 
 </div>
 
 <script src="./config.js"></script>
 
 <script>
-
 async function loadMembers() {
 
   const status = document.getElementById("status");
@@ -109,35 +107,44 @@ async function loadMembers() {
 
   try {
 
+    if (typeof SUPABASE_URL === "undefined") {
+      throw new Error("SUPABASE_URL が読み込まれていません");
+    }
+
+    if (typeof SUPABASE_PUBLISHABLE_KEY === "undefined") {
+      throw new Error("SUPABASE_PUBLISHABLE_KEY が読み込まれていません");
+    }
+
     const url =
       SUPABASE_URL +
-      "/rest/v1/members?select=display_name,current_state,updated_at&order=display_name.asc";
+      "/rest/v1/members" +
+      "?select=display_name,current_state,updated_at" +
+      "&order=display_name.asc";
 
     const response = await fetch(url, {
+      method: "GET",
       headers: {
         "apikey": SUPABASE_PUBLISHABLE_KEY,
-        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY,
+        "Accept": "application/json"
       }
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       throw new Error(
-        "HTTP " + response.status + " / " +
-        await response.text()
+        "HTTP " +
+        response.status +
+        " : " +
+        errorText
       );
     }
 
     const members = await response.json();
 
-    status.textContent = "現在 " + members.length + "名";
-
-    members.forEach(function(member) {
-
-      const row = document.createElement("tr");
-
-      const date = new Date(member.updated_at);
-
-      const time = date.toLocaleTimeString(
+    status.textContent =
+      "現在 " + members.length + "名　最終確認 " +
+      new Date().toLocaleTimeString(
         "ja-JP",
         {
           hour: "2-digit",
@@ -145,28 +152,57 @@ async function loadMembers() {
         }
       );
 
-      row.innerHTML =
-        "<td>" + member.display_name + "</td>" +
-        "<td><strong>" + member.current_state + "</strong></td>" +
-        "<td>" + time + "</td>";
+    members.forEach(function(member) {
+
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      nameCell.textContent = member.display_name || "";
+
+      const stateCell = document.createElement("td");
+      stateCell.textContent = member.current_state || "";
+
+      const timeCell = document.createElement("td");
+
+      if (member.updated_at) {
+        const date = new Date(member.updated_at);
+
+        timeCell.textContent =
+          date.toLocaleTimeString(
+            "ja-JP",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          );
+      } else {
+        timeCell.textContent = "-";
+      }
+
+      row.appendChild(nameCell);
+      row.appendChild(stateCell);
+      row.appendChild(timeCell);
 
       list.appendChild(row);
-
     });
 
   } catch (error) {
 
+    console.error(error);
+
     status.className = "error";
     status.textContent =
       "エラー：" + error.message;
-
   }
 }
+
+document
+  .getElementById("reloadButton")
+  .addEventListener("click", loadMembers);
 
 loadMembers();
 
 setInterval(loadMembers, 30000);
-
 </script>
 
 </body>
