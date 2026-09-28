@@ -1,166 +1,170 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>動態管理 管理者画面</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      padding: 20px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    .admin-box {
-      max-width: 900px;
-      margin: 20px auto;
-      background: white;
-      border-radius: 20px;
-      padding: 24px;
-    }
+<title>募集課勤務者 動態一覧</title>
 
-    h1 {
-      margin-bottom: 8px;
-    }
+<style>
+body {
+  margin: 0;
+  padding: 30px 16px;
+  background: #f4f6f8;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #17202a;
+}
 
-    .update-time {
-      color: #666;
-      margin-bottom: 20px;
-    }
+.card {
+  max-width: 760px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 24px;
+  padding: 28px 22px;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 18px;
-    }
+h1 {
+  font-size: 28px;
+}
 
-    th, td {
-      padding: 14px 8px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
+#status {
+  margin-bottom: 20px;
+  color: #666;
+}
 
-    th {
-      background: #f1f3f5;
-    }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 18px;
+}
 
-    .state {
-      font-weight: bold;
-    }
+th {
+  background: #eef1f4;
+  text-align: left;
+  padding: 14px 10px;
+}
 
-    .refresh {
-      width: 100%;
-      margin-top: 20px;
-      padding: 15px;
-      border: 0;
-      border-radius: 12px;
-      background: #2583e9;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
+td {
+  padding: 16px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  border: 0;
+  border-radius: 14px;
+  background: #4285e5;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.error {
+  color: red !important;
+}
+</style>
 </head>
 
 <body>
 
-<div class="admin-box">
+<div class="card">
 
-  <h1>募集課勤務者 動態一覧</h1>
+<h1>募集課勤務者 動態一覧</h1>
 
-  <div class="update-time" id="updateTime">
-    読み込み中...
-  </div>
+<div id="status">読み込み中...</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>氏名</th>
-        <th>現在</th>
-        <th>更新時刻</th>
-      </tr>
-    </thead>
+<table>
+<thead>
+<tr>
+<th>氏名</th>
+<th>現在</th>
+<th>更新時刻</th>
+</tr>
+</thead>
 
-    <tbody id="memberList">
-    </tbody>
-  </table>
+<tbody id="memberList"></tbody>
 
-  <button class="refresh" onclick="loadMembers()">
-    最新情報に更新
-  </button>
+</table>
+
+<button onclick="loadMembers()">
+最新情報に更新
+</button>
 
 </div>
 
-<script src="config.js"></script>
+<script src="./config.js"></script>
 
 <script>
+
 async function loadMembers() {
 
+  const status = document.getElementById("status");
   const list = document.getElementById("memberList");
 
-  list.innerHTML =
-    '<tr><td colspan="3">読み込み中...</td></tr>';
+  status.className = "";
+  status.textContent = "読み込み中...";
+  list.innerHTML = "";
 
   try {
 
-    const response = await fetch(
+    const url =
       SUPABASE_URL +
-      "/rest/v1/members?select=display_name,current_state,updated_at&order=display_name",
-      {
-        headers: {
-          "apikey": SUPABASE_PUBLISHABLE_KEY ,
-          "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
-        }
+      "/rest/v1/members?select=display_name,current_state,updated_at&order=display_name.asc";
+
+    const response = await fetch(url, {
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
       }
-    );
+    });
 
     if (!response.ok) {
-      throw new Error("データ取得に失敗しました");
+      throw new Error(
+        "HTTP " + response.status + " / " +
+        await response.text()
+      );
     }
 
     const members = await response.json();
 
-    list.innerHTML = "";
+    status.textContent = "現在 " + members.length + "名";
 
-    members.forEach(member => {
+    members.forEach(function(member) {
 
-      const tr = document.createElement("tr");
+      const row = document.createElement("tr");
 
-      const time = member.updated_at
-        ? new Date(member.updated_at).toLocaleTimeString(
-            "ja-JP",
-            {hour:"2-digit", minute:"2-digit"}
-          )
-        : "-";
+      const date = new Date(member.updated_at);
 
-      tr.innerHTML = `
-        <td>${member.display_name}</td>
-        <td class="state">${member.current_state || "未登録"}</td>
-        <td>${time}</td>
-      `;
+      const time = date.toLocaleTimeString(
+        "ja-JP",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
 
-      list.appendChild(tr);
+      row.innerHTML =
+        "<td>" + member.display_name + "</td>" +
+        "<td><strong>" + member.current_state + "</strong></td>" +
+        "<td>" + time + "</td>";
+
+      list.appendChild(row);
 
     });
 
-    document.getElementById("updateTime").textContent =
-      "最終確認：" +
-      new Date().toLocaleTimeString(
-        "ja-JP",
-        {hour:"2-digit", minute:"2-digit"}
-      );
+  } catch (error) {
 
-  } catch(error) {
+    status.className = "error";
+    status.textContent =
+      "エラー：" + error.message;
 
-    list.innerHTML =
-      '<tr><td colspan="3">読み込みに失敗しました</td></tr>';
-
-    console.error(error);
   }
 }
 
 loadMembers();
 
-/* 30秒ごとに自動更新 */
 setInterval(loadMembers, 30000);
 
 </script>
