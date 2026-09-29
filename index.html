@@ -1,1 +1,176 @@
-<!doctype html><html lang='ja'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>動態管理 Ver.1</title><link rel='stylesheet' href='style.css'></head><body><main><section class='card'><h1>動態管理 Ver.1</h1><p id='who'>本人確認中...</p><div id='status' class='status'>現在：未登録</div><div class='grid'><button data-state='出勤'>🟢 出勤</button><button data-state='退勤'>⚪ 退勤</button><button data-state='休暇'>🔵 休暇</button><button data-state='出張'>🟠 出張</button><button data-state='外出'>🟣 外出</button><button data-state='帰庁'>🟢 帰庁</button></div><p id='msg'></p></section></main><script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script><script src='config.js'></script><script src='app.js'></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>動態管理 Ver.1</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <style>
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:#f4f6f8;
+      margin:0;
+      padding:24px 16px;
+    }
+    .card{
+      max-width:480px;
+      margin:auto;
+      background:white;
+      padding:24px;
+      border-radius:18px;
+      box-shadow:0 4px 18px rgba(0,0,0,.08);
+    }
+    h1{text-align:center;font-size:26px}
+    #name{text-align:center;font-size:22px;font-weight:bold}
+    #current{text-align:center;font-size:20px;margin:16px 0 24px}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    button{
+      border:0;
+      border-radius:14px;
+      padding:18px 8px;
+      font-size:20px;
+      font-weight:bold;
+      background:#eef1f4;
+    }
+    #message{
+      text-align:center;
+      margin-top:22px;
+      min-height:28px;
+      font-weight:bold;
+    }
+  </style>
+</head>
+
+<body>
+<div class="card">
+
+<h1>動態管理 Ver.1</h1>
+
+<div id="name">確認中...</div>
+<div id="current">現在：---</div>
+
+<div class="grid">
+<button onclick="changeState('出勤')">🟢 出勤</button>
+<button onclick="changeState('退勤')">⚪ 退勤</button>
+<button onclick="changeState('休暇')">🔵 休暇</button>
+<button onclick="changeState('出張')">🟠 出張</button>
+<button onclick="changeState('外出')">🟣 外出</button>
+<button onclick="changeState('帰庁')">🟢 帰庁</button>
+</div>
+
+<div id="message"></div>
+
+</div>
+
+<script>
+const client = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+const params = new URLSearchParams(location.search);
+const token = params.get("t");
+
+let member = null;
+
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256",data);
+
+  return Array.from(new Uint8Array(hash))
+    .map(b=>b.toString(16).padStart(2,"0"))
+    .join("");
+}
+
+async function loadMember(){
+
+  if(!token){
+    document.getElementById("name").textContent =
+      "専用QRからアクセスしてください";
+    document.getElementById("current").textContent =
+      "現在：未登録";
+    return;
+  }
+
+  const hash = await sha256(token);
+
+  const {data,error} = await client
+    .from("members")
+    .select("id,display_name,current_state")
+    .eq("token_hash",hash)
+    .maybeSingle();
+
+  if(error || !data){
+    document.getElementById("name").textContent =
+      "登録されていないQRです";
+    document.getElementById("current").textContent =
+      "現在：未登録";
+    return;
+  }
+
+  member=data;
+
+  document.getElementById("name").textContent =
+    member.display_name;
+
+  document.getElementById("current").textContent =
+    "現在：" + (member.current_state || "未登録");
+}
+
+async function changeState(newState){
+
+  if(!token || !member){
+    document.getElementById("message").textContent =
+      "専用QRからアクセスしてください";
+    return;
+  }
+
+  document.getElementById("message").textContent =
+    "更新中...";
+
+  const {data,error} = await client.rpc(
+    "update_member_state",
+    {
+      p_token:token,
+      p_state:newState
+    }
+  );
+
+  if(error){
+    document.getElementById("message").textContent =
+      "更新エラー：" + error.message;
+    return;
+  }
+
+  if(data !== true){
+    document.getElementById("message").textContent =
+      "更新できませんでした";
+    return;
+  }
+
+  member.current_state=newState;
+
+  document.getElementById("current").textContent =
+    "現在：" + newState;
+
+  const now=new Date();
+
+  const time=now.toLocaleTimeString(
+    "ja-JP",
+    {hour:"2-digit",minute:"2-digit"}
+  );
+
+  document.getElementById("message").textContent =
+    newState + " " + time + " 登録しました";
+}
+
+loadMember();
+</script>
+
+</body>
+</html>
