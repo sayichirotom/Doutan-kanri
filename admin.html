@@ -96,9 +96,45 @@
 <script src="./config.js"></script>
 
 <script>
-async function loadMembers() {
+const ADMIN_TOKEN = new URLSearchParams(window.location.search).get("t");
+async function checkAdminToken() {
+  if (!ADMIN_TOKEN) return false;
 
-  const status = document.getElementById("status");
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(ADMIN_TOKEN)
+  );
+
+  const hash = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const response = await fetch(
+    SUPABASE_URL + "/rest/v1/admin_access?token_hash=eq." + hash + "&select=id",
+    {
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+      }
+    }
+  );
+
+  if (!response.ok) return false;
+
+  const data = await response.json();
+  return data.length === 1;
+}
+  async function loadMembers() {
+
+   const authorized = await checkAdminToken();
+
+  if (!authorized) {
+    document.getElementById("status").textContent =
+      "管理者認証が必要です";
+    document.getElementById("memberList").innerHTML = "";
+    return;
+  }
+    const status = document.getElementById("status");
   const list = document.getElementById("memberList");
 
   status.className = "";
