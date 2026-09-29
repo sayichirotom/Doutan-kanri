@@ -119,7 +119,7 @@ async function loadMembers() {
       SUPABASE_URL +
       "/rest/v1/members" +
       "?select=display_name,current_state,updated_at" +
-      "&order=display_name.asc";
+      "&order=sort_order.asc";
 
     const response = await fetch(url, {
       method: "GET",
