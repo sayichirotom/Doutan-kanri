@@ -141,6 +141,7 @@ async function loadMembers() {
     }
 
     const members = await response.json();
+    members.sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
 
     status.textContent =
       "現在 " + members.length + "名　最終確認 " +
