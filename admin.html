@@ -118,7 +118,7 @@ async function loadMembers() {
     const url =
       SUPABASE_URL +
       "/rest/v1/members" +
-      "?select=display_name,current_state,updated_at" +
+      "?select=display_name,current_state,updated_at,sort_order" +
       "&order=sort_order.asc";
 
     const response = await fetch(url, {
