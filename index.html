@@ -68,12 +68,12 @@
 </div>
 
 <script>
-document.getElementById("name").textContent = "JavaScript起動OK";
+document.getElementById("name").textContent = "Supabase接続前";
 const client = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
-
+document.getElementById("name").textContent = "Supabase接続OK";
 const params = new URLSearchParams(location.search);
 const token = params.get("t");
 
