@@ -169,7 +169,11 @@ async function changeState(newState){
     newState + " " + time + " 登録しました";
 }
 
-loadMember();
+loadMember().catch(error => {
+  document.getElementById("name").textContent = "エラー";
+  document.getElementById("current").textContent =
+    "原因：" + error.message;
+});
 </script>
 
 </body>
