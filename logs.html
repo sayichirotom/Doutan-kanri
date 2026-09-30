@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日別動態ログ</title>
+  <script src="config.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      margin: 0;
+      background: #f5f6f8;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .sub {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+    }
+
+    button {
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+    .summary {
+      margin: 12px 0;
+      font-weight: bold;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: white;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #eef1f4;
+    }
+
+    .state {
+      font-weight: bold;
+    }
+
+    .error {
+      color: #c62828;
+      padding: 15px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>勤務者動態 日別ログ</h1>
+  <div class="sub">募集課勤務者 動態管理システム</div>
+
+  <div class="controls">
+    <label>
+      日付：
+      <input type="date" id="dateInput">
+    </label>
+    <button onclick="loadLogs()">表示</button>
+  </div>
+
+  <div id="summary" class="summary"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>時刻</th>
+          <th>氏名</th>
+          <th>動態</th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+
+  <div id="message"></div>
+
+</div>
+
+<script>
+const SUPABASE_URL = window.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+
+function todayJST() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+
+  const get = type => parts.find(p => p.type === type).value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+document.getElementById("dateInput").value = todayJST();
+
+async function api(path) {
+  const response = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return response.json();
+}
+
+async function loadLogs() {
+  const body = document.getElementById("logBody");
+  const message = document.getElementById("message");
+  const summary = document.getElementById("summary");
+
+  body.innerHTML = "";
+  message.innerHTML = "";
+  summary.textContent = "読み込み中…";
+
+  try {
+    const selectedDate = document.getElementById("dateInput").value;
+
+    const members = await api(
+      "members?select=id,display_name"
+    );
+
+    const nameMap = {};
+    members.forEach(m => {
+      nameMap[m.id] = m.display_name;
+    });
+
+    const logs = await api(
+      "status_logs?select=id,member_id,state,recorded_at&order=recorded_at.asc"
+    );
+
+    const filtered = logs.filter(log => {
+      const jstDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date(log.recorded_at));
+
+      return jstDate === selectedDate;
+    });
+
+    summary.textContent =
+      selectedDate + "　記録件数：" + filtered.length + "件";
+
+    filtered.forEach(log => {
+      const tr = document.createElement("tr");
+
+      const time = new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(new Date(log.recorded_at));
+
+      tr.innerHTML =
+        "<td>" + time + "</td>" +
+        "<td>" + (nameMap[log.member_id] || "不明") + "</td>" +
+        '<td class="state">' + log.state + "</td>";
+
+      body.appendChild(tr);
+    });
+
+    if (filtered.length === 0) {
+      message.innerHTML =
+        '<div style="padding:15px">この日の記録はありません。</div>';
+    }
+
+  } catch (error) {
+    summary.textContent = "";
+    message.innerHTML =
+      '<div class="error">読み込みエラー：' +
+      error.message +
+      "</div>";
+  }
+}
+
+loadLogs();
+</script>
+
+</body>
+</html>
