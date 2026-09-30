@@ -68,7 +68,7 @@
 </div>
 
 <script>
-document.getElementById("name").textContent = "Supabase接続前";
+document.getElementById("name").textContent = "supabase型=" + typeof supabase;
 const client = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
