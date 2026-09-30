@@ -96,7 +96,8 @@
 <script src="./config.js"></script>
 
 <script>
-const ADMIN_TOKEN = new URLSearchParams(window.location.search).get("t");
+const ADMIN_TOKEN = new URLSearchParams(window.location.search).get("admin");
+
 async function checkAdminToken() {
   if (!ADMIN_TOKEN) return false;
 
@@ -109,20 +110,20 @@ async function checkAdminToken() {
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 
-  const response = await fetch(
+  const url =
     SUPABASE_URL +
-      "/rest/v1/admin_access?token_hash=eq." +
-      encodeURIComponent(hash) +
-      "&select=id",
-    {
-      method: "GET",
-      headers: {
-        "apikey": SUPABASE_PUBLISHABLE_KEY,
-        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY,
-        "Accept": "application/json"
-      }
+    "/rest/v1/admin_access" +
+    "?token_hash=eq." + encodeURIComponent(hash) +
+    "&select=id";
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY,
+      "Accept": "application/json"
     }
-  );
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
