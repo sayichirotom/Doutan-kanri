@@ -110,16 +110,26 @@ async function checkAdminToken() {
     .join("");
 
   const response = await fetch(
-    SUPABASE_URL + "/rest/v1/admin_access?token_hash=eq." + hash + "&select=id",
+    SUPABASE_URL +
+      "/rest/v1/admin_access?token_hash=eq." +
+      encodeURIComponent(hash) +
+      "&select=id",
     {
+      method: "GET",
       headers: {
         "apikey": SUPABASE_PUBLISHABLE_KEY,
-        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY,
+        "Accept": "application/json"
       }
     }
   );
 
-  if (!response.ok) return false;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      "管理者認証 HTTP " + response.status + " : " + errorText
+    );
+  }
 
   const data = await response.json();
   return data.length === 1;
