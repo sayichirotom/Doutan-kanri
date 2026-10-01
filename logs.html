@@ -142,7 +142,7 @@ async function api(path) {
       "apikey": SUPABASE_PUBLISHABLE_KEY,
       "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
     }
-  });y
+  });
 
   if (!response.ok) {
     throw new Error(await response.text());
