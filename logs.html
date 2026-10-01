@@ -177,17 +177,14 @@ async function loadLogs() {
     );
 
     const filtered = logs.filter(log => {
-
-  const d = new Date(log.recorded_at);
-
-  const jstDate = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-
-    .toISOString()
-
-    .slice(0, 10);
+  const jstDate = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(log.recorded_at));
 
   return jstDate === selectedDate;
-
 });
     summary.textContent =
       selectedDate + "　記録件数：" + filtered.length + "件";
