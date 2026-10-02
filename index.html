@@ -57,12 +57,30 @@
 <div class="grid">
 <button onclick="changeState('出勤')">🟢 出勤</button>
 <button onclick="changeState('退勤')">⚪ 退勤</button>
-<button onclick="changeState('休暇')">🔵 休暇</button>
+<button onclick="openLeaveMenu()">🔵 休暇</button>
 <button onclick="changeState('出張')">🟠 出張</button>
 <button onclick="changeState('外出')">🟣 外出</button>
 <button onclick="changeState('帰庁')">🟢 帰庁</button>
 </div>
+<div id="leaveMenu" style="display:none; margin-top:15px;">
+  <h3>休暇の種類を選択</h3>
 
+  <button onclick="selectLeave('1日')">1日</button>
+  <button onclick="selectLeave('午前')">午前</button>
+  <button onclick="selectLeave('午後')">午後</button>
+  <button onclick="selectLeave('時間休')">時間休</button>
+</div>
+  <div id="timeLeaveMenu" style="display:none; margin-top:15px;">
+  <h3>時間休</h3>
+
+  <label>開始時刻</label>
+  <select id="leaveStart"></select>
+
+  <label>終了時刻</label>
+  <select id="leaveEnd"></select>
+
+  <button onclick="submitTimeLeave()">決定</button>
+</div>
 <div id="message"></div>
 
 </div>
