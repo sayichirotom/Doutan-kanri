@@ -187,7 +187,9 @@ async function changeState(newState){
   document.getElementById("message").textContent =
     newState + " " + time + " 登録しました";
 }
-
+function openLeaveMenu() {
+  document.getElementById("leaveMenu").style.display = "block";
+}
 loadMember().catch(error => {
   document.getElementById("name").textContent = "エラー";
   document.getElementById("current").textContent =
