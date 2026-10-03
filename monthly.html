@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>勤務者動態 月次集計</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+</head>
+
+<body>
+  <h1>勤務者動態 月次集計</h1>
+  <p>募集課勤務者 動態管理システム</p>
+
+  <label for="monthSelect">表示月：</label>
+  <input type="month" id="monthSelect">
+  <button onclick="loadMonthly()">表示</button>
+
+  <div id="summary"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>氏名</th>
+        <th>出勤</th>
+        <th>退勤</th>
+      </tr>
+    </thead>
+    <tbody id="monthlyBody"></tbody>
+  </table>
+
+  <div id="message"></div>
+
+</body>
+</html>
