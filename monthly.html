@@ -82,13 +82,29 @@ if (logsError) {
   body.innerHTML = "";
 
   members.forEach(member => {
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      "<td>" + member.display_name + "</td>" +
-      "<td>-</td>" +
-      "<td>-</td>";
-    body.appendChild(tr);
-  });
+  const memberLogs = logs.filter(log =>
+    Number(log.member_id) === Number(member.id) &&
+    toJstDate(log.recorded_at).startsWith(month.replace("-", "/"))
+  );
+
+  const firstIn = memberLogs.find(log => log.state === "出勤");
+  const lastOut = [...memberLogs].reverse().find(log => log.state === "退勤");
+
+  const formatTime = (date) =>
+    new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(date));
+
+  const tr = document.createElement("tr");
+  tr.innerHTML =
+    "<td>" + member.display_name + "</td>" +
+    "<td>" + (firstIn ? formatTime(firstIn.recorded_at) : "-") + "</td>" +
+    "<td>" + (lastOut ? formatTime(lastOut.recorded_at) : "-") + "</td>";
+
+  body.appendChild(tr);
+});
   }
   loadMonthly();
 </script>
