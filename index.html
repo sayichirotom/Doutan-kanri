@@ -190,6 +190,14 @@ async function changeState(newState){
 function openLeaveMenu() {
   document.getElementById("leaveMenu").style.display = "block";
 }
+function selectLeave(type) {
+  if (type === "時間休") {
+    document.getElementById("timeLeaveMenu").style.display = "block";
+    return;
+  }
+
+  changeState("休暇：" + type);
+}
 loadMember().catch(error => {
   document.getElementById("name").textContent = "エラー";
   document.getElementById("current").textContent =
