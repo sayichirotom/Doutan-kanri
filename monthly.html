@@ -84,7 +84,7 @@ if (logsError) {
   members.forEach(member => {
   const memberLogs = logs.filter(log =>
     Number(log.member_id) === Number(member.id) &&
-    toJstDate(log.recorded_at).slice(0, 7) === month
+    toJstDate(log.recorded_at).slice(0, 7).replace(/\//g, "-") === month
   );
 
   const firstIn = memberLogs.find(log => log.state === "出勤");
