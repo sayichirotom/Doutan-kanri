@@ -44,6 +44,34 @@
     day: "2-digit"
   }).format(new Date(date));
 }
+async function loadMonthly() {
+  const month = document.getElementById("monthSelect").value;
+
+  if (!month) {
+    document.getElementById("message").textContent =
+      "表示する月を選択してください";
+    return;
+    const { data: members, error } = await client
+    .from("members")
+    .select("id,display_name,sort_order")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    document.getElementById("message").textContent =
+      "勤務者一覧を取得できません：" + error.message;
+    return;
+  }
+   const body = document.getElementById("monthlyBody");
+  body.innerHTML = "";
+
+  members.forEach(member => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + member.display_name + "</td>" +
+      "<td>-</td>" +
+      "<td>-</td>";
+    body.appendChild(tr);
+  }); }
 </script>
 </body>
 </html>
