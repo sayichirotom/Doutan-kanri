@@ -51,6 +51,7 @@ async function loadMonthly() {
     document.getElementById("message").textContent =
       "表示する月を選択してください";
     return;
+    }
     const { data: members, error } = await client
     .from("members")
     .select("id,display_name,sort_order")
