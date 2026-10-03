@@ -63,7 +63,16 @@ async function loadMonthly() {
     .from("members")
     .select("id,display_name,sort_order")
     .order("sort_order", { ascending: true });
+const { data: logs, error: logsError } = await client
+  .from("status_logs")
+  .select("member_id,state,recorded_at")
+  .order("recorded_at", { ascending: true });
 
+if (logsError) {
+  document.getElementById("message").textContent =
+    "動態記録を取得できません：" + logsError.message;
+  return;
+}
   if (error) {
     document.getElementById("message").textContent =
       "勤務者一覧を取得できません：" + error.message;
