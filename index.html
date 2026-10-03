@@ -280,7 +280,11 @@ async function submitTimeLeave() {
       "開始時刻と終了時刻を選択してください";
     return;
   }
-
+  if (end <= start) {
+    document.getElementById("message").textContent =
+      "終了時刻は開始時刻より後を選択してください";
+    return;
+  }
   const state = "休暇：時間休 " + start + "〜" + end;
   await changeState(state);
 }
