@@ -13,6 +13,41 @@
                  "Noto Sans JP", "Hiragino Kaku Gothic ProN",
                  "Yu Gothic", sans-serif;
   }
+  }
+
+/* 月次表 */
+table {
+  border-collapse: collapse;
+  white-space: nowrap;
+  width: max-content;
+}
+
+th, td {
+  padding: 6px 10px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+th:first-child,
+td:first-child {
+  min-width: 120px;
+  text-align: left;
+}
+
+th:nth-child(2),
+td:nth-child(2),
+th:nth-child(3),
+td:nth-child(3) {
+  min-width: 70px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+</style>
 </style>
 </head>
 
