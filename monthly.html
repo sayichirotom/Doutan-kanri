@@ -182,10 +182,19 @@ if (logsError) {
 
   members.forEach(member => {
 
-  const memberLogs = logs.filter(log =>
+  const memberLogs = logs.filter(log => {
+  const logDate = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(log.recorded_at));
+
+  return (
     Number(log.member_id) === Number(member.id) &&
-    toJstDate(log.recorded_at).slice(0, 7).replace(/\//g, "-") === month
+    logDate.slice(0, 7) === month
   );
+});
 
   const formatTime = (date) =>
     new Intl.DateTimeFormat("ja-JP", {
