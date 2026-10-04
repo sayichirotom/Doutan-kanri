@@ -287,10 +287,10 @@ if (logsError) {
 
     let cell = "－";
 
-// 当日の休暇記録を取得
-const leaveLogs = dayLogs.filter(log =>
-  log.state && log.state.startsWith("休暇：")
-);
+
+
+
+    
 
 // 出勤・退勤を表示
 if (firstIn || lastOut) {
@@ -300,29 +300,7 @@ if (firstIn || lastOut) {
     (lastOut ? formatTime(lastOut.recorded_at) : "－");
 }
 
-// 休暇を追加表示
-leaveLogs.forEach(log => {
 
-  if (log.state === "休暇：1日") {
-    cell += (cell === "－" ? "" : "<br>") + "休暇 1日";
-  }
-
-  else if (log.state === "休暇：午前") {
-    cell += (cell === "－" ? "" : "<br>") + "午前休";
-  }
-
-  else if (log.state === "休暇：午後") {
-    cell += (cell === "－" ? "" : "<br>") + "午後休";
-  }
-
-  else if (log.state.startsWith("休暇：時間休")) {
-    const timeRange = log.state.replace("休暇：時間休", "").trim();
-    cell +=
-      (cell === "－" ? "" : "<br>") +
-      "時休 " + timeRange;
-  }
-
-});
 
 row += "<td>" + cell + "</td>"; 
 
