@@ -102,15 +102,45 @@ if (logsError) {
     toJstDate(log.recorded_at).slice(0, 7).replace(/\//g, "-") === month
   );
 
-  // この勤務者について、記録が存在する日を取得
-  const days = [...new Set(
-    memberLogs.map(log => toJstDate(log.recorded_at))
-  )].sort();
+  const formatTime = (date) =>
+    new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).format(new Date(date));
 
-  days.forEach(day => {
+  const minutesFromTime = (date) => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Tokyo",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(new Date(date));
+
+    const hour = Number(parts.find(p => p.type === "hour").value);
+    const minute = Number(parts.find(p => p.type === "minute").value);
+
+    return hour * 60 + minute;
+  };
+
+  let overtimeMinutes = 0;
+  let outsideMinutes = 0;
+
+  const tr = document.createElement("tr");
+
+  let row =
+    "<td>" + member.display_name + "</td>" +
+    '<td class="overtime"></td>' +
+    '<td class="outside"></td>';
+
+  for (let day = 1; day <= daysInMonth; day++) {
+
+    const dayString =
+      month + "-" + String(day).padStart(2, "0");
 
     const dayLogs = memberLogs.filter(log =>
-      toJstDate(log.recorded_at) === day
+      toJstDate(log.recorded_at).replace(/\//g, "-") === dayString
     );
 
     const firstIn = dayLogs.find(log =>
@@ -121,24 +151,73 @@ if (logsError) {
       log.state === "退勤"
     );
 
-    const formatTime = (date) =>
-      new Intl.DateTimeFormat("ja-JP", {
-        timeZone: "Asia/Tokyo",
-        hour: "2-digit",
-        minute: "2-digit"
-      }).format(new Date(date));
+    if (firstIn) {
+      const inMinutes = minutesFromTime(firstIn.recorded_at);
 
-    const tr = document.createElement("tr");
+      if (inMinutes < 8 * 60 + 30) {
+        overtimeMinutes +=
+          (8 * 60 + 30) - inMinutes;
+      }
+    }
 
-    tr.innerHTML =
-      "<td>" + member.display_name + "</td>" +
-      "<td>" + day.slice(8, 10) + "日</td>" +
-      "<td>" + (firstIn ? formatTime(firstIn.recorded_at) : "-") + "</td>" +
-      "<td>" + (lastOut ? formatTime(lastOut.recorded_at) : "-") + "</td>";
+    if (lastOut) {
+      const outMinutes = minutesFromTime(lastOut.recorded_at);
 
-    body.appendChild(tr);
-  });
+      if (outMinutes > 17 * 60 + 15) {
+        overtimeMinutes +=
+          outMinutes - (17 * 60 + 15);
+      }
+    }
 
+    let outsideStart = null;
+
+    dayLogs.forEach(log => {
+      if (
+        (log.state === "外出" ||
+         log.state === "出張") &&
+        outsideStart === null
+      ) {
+        outsideStart = new Date(log.recorded_at);
+      }
+
+      if (
+        log.state === "帰庁" &&
+        outsideStart !== null
+      ) {
+        outsideMinutes +=
+          (new Date(log.recorded_at) - outsideStart) / 60000;
+
+        outsideStart = null;
+      }
+    });
+
+    let cell = "-";
+
+    if (firstIn || lastOut) {
+      cell =
+        (firstIn ? formatTime(firstIn.recorded_at) : "-") +
+        "<br>" +
+        (lastOut ? formatTime(lastOut.recorded_at) : "-");
+    }
+
+    row += "<td>" + cell + "</td>";
+  }
+
+  const formatMinutes = (minutes) => {
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return h + ":" + String(m).padStart(2, "0");
+  };
+
+  tr.innerHTML = row;
+
+  tr.querySelector(".overtime").textContent =
+    formatMinutes(overtimeMinutes);
+
+  tr.querySelector(".outside").textContent =
+    formatMinutes(outsideMinutes);
+
+  body.appendChild(tr);
 });
   }
   loadMonthly();
