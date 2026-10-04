@@ -46,7 +46,37 @@ td:nth-child(3) {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* 左3列を固定 */
+th:first-child,
+td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: white;
+}
 
+th:nth-child(2),
+td:nth-child(2) {
+  position: sticky;
+  left: 120px;
+  z-index: 3;
+  background: white;
+}
+
+th:nth-child(3),
+td:nth-child(3) {
+  position: sticky;
+  left: 190px;
+  z-index: 3;
+  background: white;
+}
+
+/* 見出しを手前に表示 */
+th:first-child,
+th:nth-child(2),
+th:nth-child(3) {
+  z-index: 4;
+}
 
 </style>
 </head>
