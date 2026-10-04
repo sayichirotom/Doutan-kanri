@@ -53,7 +53,21 @@
 }
 async function loadMonthly() {
   const month = document.getElementById("monthSelect").value;
+// 選択した月の日数を取得
+const [year, monthNumber] = month.split("-").map(Number);
+const daysInMonth = new Date(year, monthNumber, 0).getDate();
 
+// 横方向の日付見出しを作成
+const header = document.getElementById("monthlyHeader");
+
+header.innerHTML =
+  "<th>氏名</th>" +
+  "<th>月残業</th>" +
+  "<th>月外勤</th>";
+
+for (let day = 1; day <= daysInMonth; day++) {
+  header.innerHTML += "<th>" + day + "日</th>";
+}
   if (!month) {
     document.getElementById("message").textContent =
       "表示する月を選択してください";
