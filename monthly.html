@@ -328,6 +328,9 @@ row += "<td>" + cell + "</td>";
       "月次集計エラー：" + e.message;
     console.error(e);
   }
+const now = new Date();
+document.getElementById("monthSelect").value =
+  now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
   loadMonthly();
 </script>
 </body>
