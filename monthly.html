@@ -178,6 +178,7 @@ if (logsError) {
       "勤務者一覧を取得できません：" + error.message;
     return;
   }
+  document.getElementById("message").textContent = "勤務者取得数：" + (members ? members.length : "取得失敗");
    const body = document.getElementById("monthlyBody");
   body.innerHTML = "";
 
