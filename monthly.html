@@ -137,6 +137,7 @@ td:nth-child(-n+3) {
   }).format(new Date(date));
 }
 async function loadMonthly() {
+try {
   const month = document.getElementById("monthSelect").value;
 // 選択した月の日数を取得
 const [year, monthNumber] = month.split("-").map(Number);
@@ -320,6 +321,11 @@ row += "<td>" + cell + "</td>";
 
   body.appendChild(tr);
 });
+  }
+    } catch (e) {
+    document.getElementById("message").textContent =
+      "月次集計エラー：" + e.message;
+    console.error(e);
   }
   loadMonthly();
 </script>
