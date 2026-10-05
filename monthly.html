@@ -7,331 +7,471 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                 "Noto Sans JP", "Hiragino Kaku Gothic ProN",
-                 "Yu Gothic", sans-serif;
-  }
-  }
 
-/* 月次表 */
-table {
-  border-collapse: collapse;
-  white-space: nowrap;
-  width: max-content;
-}
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP",
+                   "Yu Gothic", sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fff;
+      color: #111;
+    }
 
-th, td {
-  padding: 6px 10px;
-  text-align: center;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
+    h1 {
+      font-size: 32px;
+      margin: 0 0 20px;
+    }
 
-th:first-child,
-td:first-child {
-  min-width: 120px;
-  text-align: left;
-}
+    p {
+      font-size: 18px;
+      margin-bottom: 28px;
+    }
 
-th:nth-child(2),
-td:nth-child(2),
-th:nth-child(3),
-td:nth-child(3) {
-  min-width: 70px;
-}
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      font-size: 18px;
+      font-weight: bold;
+    }
 
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-/* 左3列の幅を固定 */
-th:nth-child(1),
-td:nth-child(1) {
-  width: 105px;
-  min-width: 105px;
-  max-width: 105px;
-}
+    input, button {
+      font-size: 16px;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 12px;
+      background: #eee;
+    }
 
-th:nth-child(2),
-td:nth-child(2) {
-  width: 55px;
-  min-width: 55px;
-  max-width: 55px;
-}
+    button {
+      cursor: pointer;
+    }
 
-th:nth-child(3),
-td:nth-child(3) {
-  width: 55px;
-  min-width: 55px;
-  max-width: 55px;
-}
-/* 左3列を横スクロール時に固定 */
-th:nth-child(1),
-td:nth-child(1) {
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  background: white;
-}
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
-th:nth-child(2),
-td:nth-child(2) {
-  position: sticky;
-  left: 105px;
-  z-index: 3;
-  background: white;
-}
+    table {
+      border-collapse: collapse;
+      white-space: nowrap;
+      font-size: 14px;
+    }
 
-th:nth-child(3),
-td:nth-child(3) {
-  position: sticky;
-  left: 160px;
-  z-index: 3;
-  background: white;
-}
-  /* 固定3列の左右余白を縮小 */
-th:nth-child(-n+3),
-td:nth-child(-n+3) {
-  padding-left: 4px;
-  padding-right: 4px;
-}
-</style>
+    th, td {
+      border: 1px solid #ddd;
+      padding: 7px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f5f5f5;
+      font-weight: bold;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 1;
+    }
+
+    thead th:first-child {
+      background: #f5f5f5;
+      z-index: 2;
+    }
+
+    .summary {
+      font-weight: bold;
+    }
+
+    .leave {
+      font-size: 12px;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #b00020;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 
 <body>
+
   <h1>勤務者動態 月次集計</h1>
   <p>募集課勤務者 動態管理システム</p>
 
-  <label for="monthSelect">表示月：</label>
-  <input type="month" id="monthSelect">
-  <button onclick="loadMonthly()">表示</button>
+  <div class="controls">
+    <label for="monthSelect">表示月：</label>
+    <input type="month" id="monthSelect">
+    <button type="button" onclick="loadMonthly()">表示</button>
+  </div>
 
   <div class="table-wrap">
-  <table>
-    <thead>
-      <tr id="monthlyHeader">
-        <th>氏名</th>
-        <th>月残業</th>
-        <th>月外勤</th>
-      </tr>
-    </thead>
-    <tbody id="monthlyBody"></tbody>
-  </table>
-</div>
+    <table>
+      <thead>
+        <tr id="monthlyHeader">
+          <th>氏名</th>
+          <th>月残業</th>
+          <th>月外勤</th>
+        </tr>
+      </thead>
+
+      <tbody id="monthlyBody"></tbody>
+    </table>
+  </div>
 
   <div id="message"></div>
+
 <script>
-  const client = supabase.createClient(
+const client = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
-  function toJstDate(date) {
-  return new Intl.DateTimeFormat("ja-JP", {
+
+function jstParts(dateValue) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tokyo",
     year: "numeric",
     month: "2-digit",
-    day: "2-digit"
-  }).format(new Date(date));
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(new Date(dateValue));
+
+  const get = type =>
+    parts.find(p => p.type === type)?.value || "";
+
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute")
+  };
 }
-async function loadMonthly() {
-try {
-  const month = document.getElementById("monthSelect").value;
-// 選択した月の日数を取得
-const [year, monthNumber] = month.split("-").map(Number);
-const daysInMonth = new Date(year, monthNumber, 0).getDate();
 
-// 横方向の日付見出しを作成
-const header = document.getElementById("monthlyHeader");
-
-header.innerHTML =
-  "<th>氏名</th>" +
-  "<th>月残業</th>" +
-  "<th>月外勤</th>";
-
-for (let day = 1; day <= daysInMonth; day++) {
-  header.innerHTML += "<th>" + day + "日</th>";
+function jstDate(dateValue) {
+  const p = jstParts(dateValue);
+  return p.year + "-" + p.month + "-" + p.day;
 }
-  if (!month) {
-    document.getElementById("message").textContent =
-      "表示する月を選択してください";
-    return;
-    }
-    const { data: members, error } = await client
-    .from("members")
-    .select("id,display_name,sort_order")
-    .order("sort_order", { ascending: true });
-const { data: logs, error: logsError } = await client
-  .from("status_logs")
-  .select("member_id,state,recorded_at")
-  .order("recorded_at", { ascending: true });
 
-if (logsError) {
-  document.getElementById("message").textContent =
-    "動態記録を取得できません：" + logsError.message;
-  return;
+function jstTime(dateValue) {
+  const p = jstParts(dateValue);
+  return p.hour + ":" + p.minute;
 }
-  if (error) {
-    document.getElementById("message").textContent =
-      "勤務者一覧を取得できません：" + error.message;
-    return;
+
+function minuteOfDay(dateValue) {
+  const p = jstParts(dateValue);
+  return Number(p.hour) * 60 + Number(p.minute);
+}
+
+function formatMinutes(value) {
+  const minutes = Math.max(0, Math.round(value || 0));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+
+  return h + ":" + String(m).padStart(2, "0");
+}
+
+function leaveText(state) {
+  if (state === "休暇：1日") return "休暇 1日";
+  if (state === "休暇：午前") return "午前休";
+  if (state === "休暇：午後") return "午後休";
+
+  if (state && state.startsWith("休暇：時間休")) {
+    const range =
+      state.replace("休暇：時間休", "").trim();
+
+    return range ? "時休 " + range : "時間休";
   }
-  document.getElementById("message").textContent = "勤務者取得数：" + (members ? members.length : "取得失敗");
-   const body = document.getElementById("monthlyBody");
+
+  return "";
+}
+
+async function loadMonthly() {
+
+  const message =
+    document.getElementById("message");
+
+  const body =
+    document.getElementById("monthlyBody");
+
+  const header =
+    document.getElementById("monthlyHeader");
+
+  message.textContent = "";
   body.innerHTML = "";
 
-  members.forEach(member => {
+  try {
 
-  const memberLogs = logs.filter(log => {
-  const logDate = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(new Date(log.recorded_at));
+    const selectedMonth =
+      document.getElementById("monthSelect").value;
 
-  return (
-    Number(log.member_id) === Number(member.id) &&
-    logDate.slice(0, 7) === month
-  );
-});
-
-  const formatTime = (date) =>
-    new Intl.DateTimeFormat("ja-JP", {
-      timeZone: "Asia/Tokyo",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date(date));
-
-  const minutesFromTime = (date) => {
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Tokyo",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).formatToParts(new Date(date));
-
-    const hour = Number(parts.find(p => p.type === "hour").value);
-    const minute = Number(parts.find(p => p.type === "minute").value);
-
-    return hour * 60 + minute;
-  };
-
-  let overtimeMinutes = 0;
-  let outsideMinutes = 0;
-
-  const tr = document.createElement("tr");
-
-  let row =
-    "<td>" + member.display_name + "</td>" +
-    '<td class="overtime"></td>' +
-    '<td class="outside"></td>';
-
-  for (let day = 1; day <= daysInMonth; day++) {
-
-    const dayString =
-      month + "-" + String(day).padStart(2, "0");
-
-    const dayLogs = memberLogs.filter(log =>
-      toJstDate(log.recorded_at).replace(/\//g, "-") === dayString
-    );
-
-    const firstIn = dayLogs.find(log =>
-      log.state === "出勤"
-    );
-
-    const lastOut = [...dayLogs].reverse().find(log =>
-      log.state === "退勤"
-    );
-
-    if (firstIn) {
-      const inMinutes = minutesFromTime(firstIn.recorded_at);
-
-      if (inMinutes < 8 * 60 + 30) {
-        overtimeMinutes +=
-          (8 * 60 + 30) - inMinutes;
-      }
+    if (!selectedMonth) {
+      message.textContent =
+        "表示する月を選択してください。";
+      return;
     }
 
-    if (lastOut) {
-      const outMinutes = minutesFromTime(lastOut.recorded_at);
+    const [year, monthNumber] =
+      selectedMonth.split("-").map(Number);
 
-      if (outMinutes > 17 * 60 + 15) {
-        overtimeMinutes +=
-          outMinutes - (17 * 60 + 15);
-      }
+    const daysInMonth =
+      new Date(year, monthNumber, 0).getDate();
+
+    /* 日付見出しを作成 */
+
+    header.innerHTML =
+      "<th>氏名</th>" +
+      "<th>月残業</th>" +
+      "<th>月外勤</th>";
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      header.innerHTML +=
+        "<th>" + day + "日</th>";
     }
 
-    let outsideStart = null;
+    /* 勤務者取得 */
 
-    dayLogs.forEach(log => {
-      if (
-        (log.state === "外出" ||
-         log.state === "出張") &&
-        outsideStart === null
+    const {
+      data: members,
+      error: membersError
+    } = await client
+      .from("members")
+      .select("id,display_name,sort_order")
+      .order("sort_order", { ascending: true });
+
+    if (membersError) {
+      throw new Error(
+        "勤務者一覧取得エラー：" +
+        membersError.message
+      );
+    }
+
+    if (!members) {
+      throw new Error(
+        "勤務者一覧を取得できませんでした。"
+      );
+    }
+
+    /* 動態ログ取得 */
+
+    const {
+      data: logs,
+      error: logsError
+    } = await client
+      .from("status_logs")
+      .select("member_id,state,recorded_at")
+      .order("recorded_at", { ascending: true });
+
+    if (logsError) {
+      throw new Error(
+        "動態記録取得エラー：" +
+        logsError.message
+      );
+    }
+
+    const safeLogs = logs || [];
+
+    /* 39名を順番に作成 */
+
+    members.forEach(member => {
+
+      const tr =
+        document.createElement("tr");
+
+      const memberLogs =
+        safeLogs.filter(log =>
+          String(log.member_id) === String(member.id) &&
+          jstDate(log.recorded_at).slice(0, 7) ===
+            selectedMonth
+        );
+
+      let overtimeMinutes = 0;
+      let outsideMinutes = 0;
+
+      let row =
+        "<td>" + member.display_name + "</td>" +
+        '<td class="summary overtime"></td>' +
+        '<td class="summary outside"></td>';
+
+      /* 1日ずつ集計 */
+
+      for (
+        let day = 1;
+        day <= daysInMonth;
+        day++
       ) {
-        outsideStart = new Date(log.recorded_at);
+
+        const dateString =
+          selectedMonth + "-" +
+          String(day).padStart(2, "0");
+
+        const dayLogs =
+          memberLogs.filter(log =>
+            jstDate(log.recorded_at) ===
+              dateString
+          );
+
+        const firstIn =
+          dayLogs.find(log =>
+            log.state === "出勤"
+          );
+
+        const lastOut =
+          [...dayLogs].reverse().find(log =>
+            log.state === "退勤"
+          );
+
+        /* 残業 */
+
+        if (firstIn) {
+          const inMinutes =
+            minuteOfDay(firstIn.recorded_at);
+
+          if (inMinutes < 8 * 60 + 30) {
+            overtimeMinutes +=
+              (8 * 60 + 30) - inMinutes;
+          }
+        }
+
+        if (lastOut) {
+          const outMinutes =
+            minuteOfDay(lastOut.recorded_at);
+
+          if (outMinutes > 17 * 60 + 15) {
+            overtimeMinutes +=
+              outMinutes - (17 * 60 + 15);
+          }
+        }
+
+        /* 外出・出張～帰庁 */
+
+        let outsideStart = null;
+
+        dayLogs.forEach(log => {
+
+          if (
+            (log.state === "外出" ||
+             log.state === "出張") &&
+            outsideStart === null
+          ) {
+            outsideStart =
+              new Date(log.recorded_at);
+          }
+
+          if (
+            log.state === "帰庁" &&
+            outsideStart !== null
+          ) {
+            outsideMinutes +=
+              (
+                new Date(log.recorded_at) -
+                outsideStart
+              ) / 60000;
+
+            outsideStart = null;
+          }
+        });
+
+        /* 日別表示 */
+
+        const contents = [];
+
+        if (firstIn || lastOut) {
+          contents.push(
+            (firstIn
+              ? jstTime(firstIn.recorded_at)
+              : "—") +
+            "<br>" +
+            (lastOut
+              ? jstTime(lastOut.recorded_at)
+              : "—")
+          );
+        }
+
+        dayLogs
+          .filter(log =>
+            log.state &&
+            log.state.startsWith("休暇：")
+          )
+          .forEach(log => {
+
+            const text =
+              leaveText(log.state);
+
+            if (text) {
+              contents.push(
+                '<span class="leave">' +
+                text +
+                "</span>"
+              );
+            }
+          });
+
+        const cell =
+          contents.length
+            ? contents.join("<br>")
+            : "—";
+
+        row +=
+          "<td>" + cell + "</td>";
       }
 
-      if (
-        log.state === "帰庁" &&
-        outsideStart !== null
-      ) {
-        outsideMinutes +=
-          (new Date(log.recorded_at) - outsideStart) / 60000;
+      tr.innerHTML = row;
 
-        outsideStart = null;
-      }
+      tr.querySelector(".overtime")
+        .textContent =
+        formatMinutes(overtimeMinutes);
+
+      tr.querySelector(".outside")
+        .textContent =
+        formatMinutes(outsideMinutes);
+
+      body.appendChild(tr);
     });
 
-    let cell = "－";
+    message.style.color = "#333";
+    message.textContent =
+      "勤務者 " +
+      members.length +
+      "名を表示";
 
+  } catch (e) {
 
+    console.error(e);
 
-
-    
-
-// 出勤・退勤を表示
-if (firstIn || lastOut) {
-  cell =
-    (firstIn ? formatTime(firstIn.recorded_at) : "－") +
-    "<br>" +
-    (lastOut ? formatTime(lastOut.recorded_at) : "－");
+    message.style.color = "#b00020";
+    message.textContent =
+      "月次集計エラー：" +
+      (e?.message || String(e));
+  }
 }
 
+/* 最初に今月を設定 */
 
-
-row += "<td>" + cell + "</td>"; 
-
-  const formatMinutes = (minutes) => {
-    const h = Math.floor(minutes / 60);
-    const m = Math.round(minutes % 60);
-    return h + ":" + String(m).padStart(2, "0");
-  };
-
-  tr.innerHTML = row;
-
-  tr.querySelector(".overtime").textContent =
-    formatMinutes(overtimeMinutes);
-
-  tr.querySelector(".outside").textContent =
-    formatMinutes(outsideMinutes);
-
-  body.appendChild(tr);
-});
-  }
-    } catch (e) {
-    document.getElementById("message").textContent =
-      "月次集計エラー：" + e.message;
-    console.error(e);
-  }
 const now = new Date();
+
 document.getElementById("monthSelect").value =
-  now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-  loadMonthly();
+  now.getFullYear() +
+  "-" +
+  String(now.getMonth() + 1)
+    .padStart(2, "0");
+
+/* 初回表示 */
+
+loadMonthly();
+
 </script>
 </body>
 </html>
