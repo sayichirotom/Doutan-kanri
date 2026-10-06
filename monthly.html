@@ -90,7 +90,13 @@
     .summary {
       font-weight: bold;
     }
+.overtime-warning {
+  background: #fff4cc;
+}
 
+.overtime-danger {
+  background: #ffd6d6;
+}
     .leave {
       font-size: 12px;
     }
@@ -433,7 +439,13 @@ async function loadMonthly() {
       tr.querySelector(".overtime")
         .textContent =
         formatMinutes(overtimeMinutes);
+const overtimeCell = tr.querySelector(".overtime");
 
+if (overtimeMinutes >= 45 * 60) {
+  overtimeCell.classList.add("overtime-danger");
+} else if (overtimeMinutes >= 30 * 60) {
+  overtimeCell.classList.add("overtime-warning");
+}
       tr.querySelector(".outside")
         .textContent =
         formatMinutes(outsideMinutes);
