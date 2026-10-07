@@ -127,6 +127,7 @@
         <tr id="monthlyHeader">
           <th>氏名</th>
           <th>月残業</th>
+          <th>前月差</th>
           <th>月外勤</th>
         </tr>
       </thead>
@@ -304,11 +305,68 @@ async function loadMonthly() {
         );
 
       let overtimeMinutes = 0;
+      let prevOvertimeMinutes = 0;
       let outsideMinutes = 0;
+const [selYear, selMonth] = selectedMonth.split("-").map(Number);
+const prevDate = new Date(selYear, selMonth - 2, 1);
+const prevMonth =
+  prevDate.getFullYear() + "-" +
+  String(prevDate.getMonth() + 1).padStart(2, "0");
+      
+      const prevMemberLogs = memberLogs.filter(log =>
+  jstDate(log.recorded_at).startsWith(prevMonth)
+);
+
+const daysInPrevMonth = new Date(selYear, selMonth - 1, 0).getDate();
+
+for (let day = 1; day <= daysInPrevMonth; day++) {
+  const dateString =
+    prevMonth + "-" +
+    String(day).padStart(2, "0");
+
+  const dayLogs = prevMemberLogs.filter(log =>
+    jstDate(log.recorded_at) === dateString
+  );
+
+  const firstIn = dayLogs.find(log =>
+    log.state === "出勤"
+  );
+
+  const lastOut =
+    [...dayLogs].reverse().find(log =>
+      log.state === "退勤"
+    );
+
+  if (firstIn) {
+    const inMinutes =
+      minuteOfDay(firstIn.recorded_at);
+
+    if (inMinutes < 8 * 60 + 30) {
+      prevOvertimeMinutes +=
+        (8 * 60 + 30) - inMinutes;
+    }
+  }
+
+  if (lastOut) {
+    const outMinutes =
+      minuteOfDay(lastOut.recorded_at);
+
+    if (outMinutes > 17 * 60 + 15) {
+      prevOvertimeMinutes +=
+        outMinutes - (17 * 60 + 15);
+    }
+  }
+}
+
+const diffMinutes = overtimeMinutes - prevOvertimeMinutes;
+const diffText = diffMinutes < 0
+  ? "▲" + formatMinutes(Math.abs(diffMinutes))
+  : formatMinutes(diffMinutes);
 
       let row =
         "<td>" + member.display_name + "</td>" +
         '<td class="summary overtime"></td>' +
+        '<td class="summary prevdiff">—</td>' +
         '<td class="summary outside"></td>';
 
       /* 1日ずつ集計 */
@@ -439,6 +497,10 @@ async function loadMonthly() {
       tr.querySelector(".overtime")
         .textContent =
         formatMinutes(overtimeMinutes);
+
+tr.querySelector(".prevdiff")
+  .textContent = diffText;
+
 const overtimeCell = tr.querySelector(".overtime");
 
 if (overtimeMinutes >= 100 * 60) {
