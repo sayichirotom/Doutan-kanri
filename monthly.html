@@ -441,9 +441,9 @@ async function loadMonthly() {
         formatMinutes(overtimeMinutes);
 const overtimeCell = tr.querySelector(".overtime");
 
-if (overtimeMinutes >= 45 * 60) {
+if (overtimeMinutes >= 100 * 60) {
   overtimeCell.classList.add("overtime-danger");
-} else if (overtimeMinutes >= 1 * 60) {
+} else if (overtimeMinutes >= 45 * 60) {
   overtimeCell.classList.add("overtime-warning");
 }
       tr.querySelector(".outside")
